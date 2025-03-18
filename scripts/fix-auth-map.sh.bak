@@ -5,9 +5,9 @@ echo "Fixing PostgreSQL authentication mapping..."
 
 # Connect to the PostgreSQL container
 docker exec -it ecommerceanalytics-supabase-db-1 bash -c "
-# Create or update the pg_ident.conf file to map the root user to ***REMOVED***
+# Create or update the pg_ident.conf file to map the root user to ecommercedev
 echo '# supabase_map
-supabase_map      root            ***REMOVED***
+supabase_map      root            ecommercedev
 supabase_map      root            postgres
 supabase_map      root            supabase_admin' > /var/lib/postgresql/data/pg_ident.conf
 
@@ -30,19 +30,19 @@ sleep 10
 
 # Now fix permissions using the postgres superuser
 docker exec -it ecommerceanalytics-supabase-db-1 bash -c "
-su - postgres -c 'psql -c \"ALTER USER ***REMOVED*** WITH SUPERUSER;\"'
-su - postgres -c 'psql -c \"GRANT ALL PRIVILEGES ON SCHEMA public TO ***REMOVED***;\"'
-su - postgres -c 'psql -c \"GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ***REMOVED***;\"'
-su - postgres -c 'psql -c \"GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ***REMOVED***;\"'
-su - postgres -c 'psql -c \"GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO ***REMOVED***;\"'
+su - postgres -c 'psql -c \"ALTER USER ecommercedev WITH SUPERUSER;\"'
+su - postgres -c 'psql -c \"GRANT ALL PRIVILEGES ON SCHEMA public TO ecommercedev;\"'
+su - postgres -c 'psql -c \"GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ecommercedev;\"'
+su - postgres -c 'psql -c \"GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ecommercedev;\"'
+su - postgres -c 'psql -c \"GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO ecommercedev;\"'
 
 # Create airflow schema if it doesn't exist
 su - postgres -c 'psql -c \"CREATE SCHEMA IF NOT EXISTS airflow;\"'
-su - postgres -c 'psql -c \"GRANT ALL PRIVILEGES ON SCHEMA airflow TO ***REMOVED***;\"'
+su - postgres -c 'psql -c \"GRANT ALL PRIVILEGES ON SCHEMA airflow TO ecommercedev;\"'
 
 # Create metabase schema if it doesn't exist
 su - postgres -c 'psql -c \"CREATE SCHEMA IF NOT EXISTS metabase;\"'
-su - postgres -c 'psql -c \"GRANT ALL PRIVILEGES ON SCHEMA metabase TO ***REMOVED***;\"'
+su - postgres -c 'psql -c \"GRANT ALL PRIVILEGES ON SCHEMA metabase TO ecommercedev;\"'
 
 # Create metabase user if it doesn't exist
 su - postgres -c 'psql -c \"DO

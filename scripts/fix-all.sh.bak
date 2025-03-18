@@ -13,9 +13,9 @@ su - postgres -c "
   cp /var/lib/postgresql/data/pg_hba.conf /var/lib/postgresql/data/pg_hba.conf.bak
   cp /var/lib/postgresql/data/pg_ident.conf /var/lib/postgresql/data/pg_ident.conf.bak
 
-  # Update pg_ident.conf - add mapping for ***REMOVED***
+  # Update pg_ident.conf - add mapping for ecommercedev
   echo '# Added by fix script' >> /var/lib/postgresql/data/pg_ident.conf
-  echo 'supabase_map root ***REMOVED***' >> /var/lib/postgresql/data/pg_ident.conf
+  echo 'supabase_map root ecommercedev' >> /var/lib/postgresql/data/pg_ident.conf
 
   # Replace peer auth with md5 auth in pg_hba.conf
   sed -i 's/local all  all                peer map=supabase_map/local all  all                md5/g' /var/lib/postgresql/data/pg_hba.conf
@@ -33,11 +33,11 @@ sleep 15
 
 echo "4. Setting up user permissions and creating required tables..."
 docker exec -i ecommerceanalytics-supabase-db-1 psql -U postgres << 'EOF'
--- Create password for ***REMOVED*** user for MD5 authentication to work
-ALTER USER ***REMOVED*** WITH PASSWORD '***REMOVED***';
+-- Create password for ecommercedev user for MD5 authentication to work
+ALTER USER ecommercedev WITH PASSWORD 'ecommercedev';
 
 -- Try to grant superuser as it might be needed for extensions
-ALTER USER ***REMOVED*** WITH SUPERUSER;
+ALTER USER ecommercedev WITH SUPERUSER;
 
 -- First fix the ecommerce-db database
 \c "ecommerce-db"
@@ -68,40 +68,40 @@ CREATE TABLE IF NOT EXISTS job (
 );
 
 -- Grant permissions for ecommerce-db
-GRANT ALL PRIVILEGES ON SCHEMA public TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO ***REMOVED***;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ***REMOVED***;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ***REMOVED***;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO ***REMOVED***;
+GRANT ALL PRIVILEGES ON SCHEMA public TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO ecommercedev;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ecommercedev;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ecommercedev;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO ecommercedev;
 
 -- Grant permissions for olist schema
-GRANT ALL PRIVILEGES ON SCHEMA olist TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA olist TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA olist TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA olist TO ***REMOVED***;
-ALTER DEFAULT PRIVILEGES IN SCHEMA olist GRANT ALL ON TABLES TO ***REMOVED***;
-ALTER DEFAULT PRIVILEGES IN SCHEMA olist GRANT ALL ON SEQUENCES TO ***REMOVED***;
-ALTER DEFAULT PRIVILEGES IN SCHEMA olist GRANT ALL ON FUNCTIONS TO ***REMOVED***;
+GRANT ALL PRIVILEGES ON SCHEMA olist TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA olist TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA olist TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA olist TO ecommercedev;
+ALTER DEFAULT PRIVILEGES IN SCHEMA olist GRANT ALL ON TABLES TO ecommercedev;
+ALTER DEFAULT PRIVILEGES IN SCHEMA olist GRANT ALL ON SEQUENCES TO ecommercedev;
+ALTER DEFAULT PRIVILEGES IN SCHEMA olist GRANT ALL ON FUNCTIONS TO ecommercedev;
 
 -- Grant permissions for Supabase schemas
-GRANT ALL PRIVILEGES ON SCHEMA auth TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON SCHEMA storage TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON SCHEMA graphql TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON SCHEMA realtime TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA auth TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA auth TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA auth TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA storage TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA storage TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA storage TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA graphql TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA graphql TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA graphql TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA realtime TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA realtime TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA realtime TO ***REMOVED***;
+GRANT ALL PRIVILEGES ON SCHEMA auth TO ecommercedev;
+GRANT ALL PRIVILEGES ON SCHEMA storage TO ecommercedev;
+GRANT ALL PRIVILEGES ON SCHEMA graphql TO ecommercedev;
+GRANT ALL PRIVILEGES ON SCHEMA realtime TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA auth TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA auth TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA auth TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA storage TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA storage TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA storage TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA graphql TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA graphql TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA graphql TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA realtime TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA realtime TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA realtime TO ecommercedev;
 
 -- Now fix the metabase database
 \c metabase
@@ -128,13 +128,13 @@ CREATE TABLE IF NOT EXISTS databasechangelog (
 );
 
 -- Grant permissions for metabase database
-GRANT ALL PRIVILEGES ON SCHEMA public TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO ***REMOVED***;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ***REMOVED***;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ***REMOVED***;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO ***REMOVED***;
+GRANT ALL PRIVILEGES ON SCHEMA public TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ecommercedev;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO ecommercedev;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ecommercedev;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ecommercedev;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO ecommercedev;
 EOF
 
 echo "5. Updating Metabase environment variables to ensure proper PostgreSQL connection..."

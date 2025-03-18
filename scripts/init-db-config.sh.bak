@@ -6,11 +6,11 @@ set -e
 
 echo "Running custom database initialization..."
 
-# Grant superuser to ***REMOVED***
+# Grant superuser to ecommercedev
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     -- Update authentication method
-    ALTER USER ***REMOVED*** WITH PASSWORD '***REMOVED***';
-    ALTER USER ***REMOVED*** WITH SUPERUSER;
+    ALTER USER ecommercedev WITH PASSWORD 'ecommercedev';
+    ALTER USER ecommercedev WITH SUPERUSER;
 
     -- Create olist schema
     CREATE SCHEMA IF NOT EXISTS olist;
@@ -19,29 +19,29 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE SCHEMA IF NOT EXISTS auth;
 
     -- Grant permissions on olist schema
-    GRANT ALL PRIVILEGES ON SCHEMA olist TO ***REMOVED***;
-    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA olist TO ***REMOVED***;
-    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA olist TO ***REMOVED***;
-    GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA olist TO ***REMOVED***;
+    GRANT ALL PRIVILEGES ON SCHEMA olist TO ecommercedev;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA olist TO ecommercedev;
+    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA olist TO ecommercedev;
+    GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA olist TO ecommercedev;
 
     -- Grant permissions on auth schema
-    GRANT ALL PRIVILEGES ON SCHEMA auth TO ***REMOVED***;
-    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA auth TO ***REMOVED***;
-    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA auth TO ***REMOVED***;
-    GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA auth TO ***REMOVED***;
+    GRANT ALL PRIVILEGES ON SCHEMA auth TO ecommercedev;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA auth TO ecommercedev;
+    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA auth TO ecommercedev;
+    GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA auth TO ecommercedev;
 
     -- Set default privileges for olist schema
-    ALTER DEFAULT PRIVILEGES IN SCHEMA olist GRANT ALL ON TABLES TO ***REMOVED***;
-    ALTER DEFAULT PRIVILEGES IN SCHEMA olist GRANT ALL ON SEQUENCES TO ***REMOVED***;
-    ALTER DEFAULT PRIVILEGES IN SCHEMA olist GRANT ALL ON FUNCTIONS TO ***REMOVED***;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA olist GRANT ALL ON TABLES TO ecommercedev;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA olist GRANT ALL ON SEQUENCES TO ecommercedev;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA olist GRANT ALL ON FUNCTIONS TO ecommercedev;
 
     -- Set default privileges for auth schema
-    ALTER DEFAULT PRIVILEGES IN SCHEMA auth GRANT ALL ON TABLES TO ***REMOVED***;
-    ALTER DEFAULT PRIVILEGES IN SCHEMA auth GRANT ALL ON SEQUENCES TO ***REMOVED***;
-    ALTER DEFAULT PRIVILEGES IN SCHEMA auth GRANT ALL ON FUNCTIONS TO ***REMOVED***;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA auth GRANT ALL ON TABLES TO ecommercedev;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA auth GRANT ALL ON SEQUENCES TO ecommercedev;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA auth GRANT ALL ON FUNCTIONS TO ecommercedev;
 
     -- Set search path
-    ALTER USER ***REMOVED*** SET search_path TO olist, auth, public;
+    ALTER USER ecommercedev SET search_path TO olist, auth, public;
 EOSQL
 
 echo "Database initialization complete!"

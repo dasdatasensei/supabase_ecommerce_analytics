@@ -9,14 +9,14 @@ echo "Using supabase_admin (password: postgres) to fix user permissions..."
 
 # Connect to the database container
 docker exec -i ecommerceanalytics-supabase-db-1 bash -c "
-  # First, let's ensure ***REMOVED*** has superuser privileges
-  PGPASSWORD=postgres psql -h localhost -U supabase_admin -d postgres -c \"ALTER USER ***REMOVED*** WITH SUPERUSER;\"
+  # First, let's ensure ecommercedev has superuser privileges
+  PGPASSWORD=postgres psql -h localhost -U supabase_admin -d postgres -c \"ALTER USER ecommercedev WITH SUPERUSER;\"
 
-  # Set a consistent password for ***REMOVED*** to ensure password authentication works
-  PGPASSWORD=postgres psql -h localhost -U supabase_admin -d postgres -c \"ALTER USER ***REMOVED*** WITH PASSWORD '***REMOVED***';\"
+  # Set a consistent password for ecommercedev to ensure password authentication works
+  PGPASSWORD=postgres psql -h localhost -U supabase_admin -d postgres -c \"ALTER USER ecommercedev WITH PASSWORD 'ecommercedev';\"
 
   # Verify the changes
-  PGPASSWORD=postgres psql -h localhost -U supabase_admin -d postgres -c \"SELECT usename, usesuper FROM pg_user WHERE usename = '***REMOVED***';\"
+  PGPASSWORD=postgres psql -h localhost -U supabase_admin -d postgres -c \"SELECT usename, usesuper FROM pg_user WHERE usename = 'ecommercedev';\"
 "
 
 echo "User permissions fixed!"
@@ -24,11 +24,11 @@ echo
 echo "Document for future reference:"
 echo "----------------------------"
 echo "supabase_admin password: postgres"
-echo "***REMOVED*** password: ***REMOVED***"
+echo "ecommercedev password: ecommercedev"
 echo
 echo "Connection examples:"
 echo "- As supabase_admin: PGPASSWORD=postgres psql -h localhost -U supabase_admin -d postgres"
-echo "- As ***REMOVED***: PGPASSWORD=***REMOVED*** psql -h localhost -U ***REMOVED*** -d ecommerce-db"
+echo "- As ecommercedev: PGPASSWORD=ecommercedev psql -h localhost -U ecommercedev -d ecommerce-db"
 echo
-echo "The ***REMOVED*** user now has superuser privileges and the olist schema has been created."
+echo "The ecommercedev user now has superuser privileges and the olist schema has been created."
 echo "==================================================="

@@ -11,22 +11,22 @@ log "Starting database permission fixes..."
 # Connect to the database container and run SQL commands
 log "Connecting to database container and applying permissions..."
 
-# Grant ***REMOVED*** superuser privileges
-docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "ALTER USER ***REMOVED*** WITH SUPERUSER;"
+# Grant ecommercedev superuser privileges
+docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "ALTER USER ecommercedev WITH SUPERUSER;"
 
 # Grant permissions on public schema
-docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "GRANT ALL PRIVILEGES ON SCHEMA public TO ***REMOVED***;"
-docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ***REMOVED***;"
-docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ***REMOVED***;"
-docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO ***REMOVED***;"
+docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "GRANT ALL PRIVILEGES ON SCHEMA public TO ecommercedev;"
+docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ecommercedev;"
+docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ecommercedev;"
+docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO ecommercedev;"
 
 # Create airflow schema if it doesn't exist
 docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "CREATE SCHEMA IF NOT EXISTS airflow;"
-docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "GRANT ALL PRIVILEGES ON SCHEMA airflow TO ***REMOVED***;"
+docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "GRANT ALL PRIVILEGES ON SCHEMA airflow TO ecommercedev;"
 
 # Create metabase schema if it doesn't exist
 docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "CREATE SCHEMA IF NOT EXISTS metabase;"
-docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "GRANT ALL PRIVILEGES ON SCHEMA metabase TO ***REMOVED***;"
+docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "GRANT ALL PRIVILEGES ON SCHEMA metabase TO ecommercedev;"
 
 # Create metabase user if it doesn't exist
 docker exec -i ecommerceanalytics-supabase-db-1 psql -U supabase_admin -c "

@@ -78,8 +78,8 @@ import psycopg2
 SUPABASE_DB_PARAMS = {
     "host": "ecommerceanalytics-supabase-db-1",  # Internal Docker network hostname
     "database": "ecommerce-db",  # Ecommerce database
-    "user": "***REMOVED***",  # Ecommerce development user
-    "password": "***REMOVED***",  # Ecommerce development password
+    "user": "ecommercedev",  # Ecommerce development user
+    "password": "ecommercedev",  # Ecommerce development password
     "port": 5432,  # Supabase postgres port
     "connect_timeout": 10,  # Connection timeout in seconds
 }

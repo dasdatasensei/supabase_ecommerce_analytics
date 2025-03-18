@@ -5,12 +5,12 @@ set -e
 echo "Fixing JWT authentication for Supabase API..."
 
 # Generate a new JWT secret key
-JWT_SECRET="***REMOVED***"
+JWT_SECRET="super_secret_jwt_key_for_testing_only"
 echo "Using test JWT secret: $JWT_SECRET"
 
 # Create new tokens (simplified for testing)
-ANON_TOKEN="***REMOVED***"
-SERVICE_TOKEN="***REMOVED***"
+ANON_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.8YEUYhRBrm7HX7LpjA4-FC9PdMHjE0NOWYd0OJFgbTo"
+SERVICE_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.xFUXX3oK9l0PLLLDj_cZjbecX8TvMfQgGvSeRgYr8jI"
 
 echo "Using predefined JWT tokens"
 

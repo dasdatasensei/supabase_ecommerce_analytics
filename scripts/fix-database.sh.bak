@@ -1,25 +1,25 @@
 #!/bin/bash
 set -e
 
-echo "Creating ***REMOVED*** user and setting up database..."
+echo "Creating ecommercedev user and setting up database..."
 
 # Run SQL commands to create user and database
 docker exec -i ecommerceanalytics-supabase-db-1 psql -U postgres << EOF
 -- Create the user if it doesn't exist
-CREATE USER ***REMOVED*** WITH PASSWORD '***REMOVED***';
-ALTER USER ***REMOVED*** WITH SUPERUSER;
+CREATE USER ecommercedev WITH PASSWORD 'ecommercedev';
+ALTER USER ecommercedev WITH SUPERUSER;
 
 -- Create the database if it doesn't exist
 SELECT 'CREATE DATABASE "ecommerce-db"' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'ecommerce-db') \gexec
-GRANT ALL PRIVILEGES ON DATABASE "ecommerce-db" TO ***REMOVED***;
+GRANT ALL PRIVILEGES ON DATABASE "ecommerce-db" TO ecommercedev;
 
 -- Connect to the ecommerce-db database
 \c "ecommerce-db"
 
 -- Create schema
 CREATE SCHEMA IF NOT EXISTS olist;
-GRANT ALL ON SCHEMA olist TO ***REMOVED***;
-GRANT ALL PRIVILEGES ON SCHEMA olist TO ***REMOVED***;
+GRANT ALL ON SCHEMA olist TO ecommercedev;
+GRANT ALL PRIVILEGES ON SCHEMA olist TO ecommercedev;
 
 -- Create extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -30,13 +30,13 @@ CREATE SCHEMA IF NOT EXISTS auth;
 CREATE SCHEMA IF NOT EXISTS storage;
 CREATE SCHEMA IF NOT EXISTS graphql;
 CREATE SCHEMA IF NOT EXISTS realtime;
-GRANT ALL ON SCHEMA auth TO ***REMOVED***;
-GRANT ALL ON SCHEMA storage TO ***REMOVED***;
-GRANT ALL ON SCHEMA graphql TO ***REMOVED***;
-GRANT ALL ON SCHEMA realtime TO ***REMOVED***;
+GRANT ALL ON SCHEMA auth TO ecommercedev;
+GRANT ALL ON SCHEMA storage TO ecommercedev;
+GRANT ALL ON SCHEMA graphql TO ecommercedev;
+GRANT ALL ON SCHEMA realtime TO ecommercedev;
 
 -- Check the role exists
-SELECT rolname FROM pg_roles WHERE rolname='***REMOVED***';
+SELECT rolname FROM pg_roles WHERE rolname='ecommercedev';
 EOF
 
 echo "Database setup completed successfully!"

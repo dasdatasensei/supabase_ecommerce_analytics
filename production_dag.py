@@ -129,8 +129,8 @@ SUPABASE_INTERNAL_URL = "http://ecommerceanalytics-supabase-api-1:3000"
 SUPABASE_DB_PARAMS = {
     "host": os.environ.get("DB_HOST", "ecommerceanalytics-supabase-db-1"),
     "database": os.environ.get("DB_NAME", "ecommerce-db"),
-    "user": os.environ.get("DB_USER", "***REMOVED***"),
-    "password": os.environ.get("DB_PASSWORD", "***REMOVED***"),
+    "user": os.environ.get("DB_USER", "ecommercedev"),
+    "password": os.environ.get("DB_PASSWORD", "ecommercedev"),
     "port": int(os.environ.get("DB_PORT", 5432)),
     "connect_timeout": 10,
 }

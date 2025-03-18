@@ -4,8 +4,8 @@ ecommerce_analytics:
     dev:
       type: postgres
       host: "{{ env_var('DB_HOST', 'localhost') }}"
-      user: "{{ env_var('DB_USER', '***REMOVED***') }}"
-      password: "{{ env_var('DB_PASSWORD', '***REMOVED***') }}"
+      user: "{{ env_var('DB_USER', 'ecommercedev') }}"
+      password: "{{ env_var('DB_PASSWORD', 'ecommercedev') }}"
       port: "{{ env_var('DB_PORT', 5433) | int }}"
       dbname: "{{ env_var('DB_NAME', 'ecommerce-db') }}"
       schema: "{{ env_var('DB_SCHEMA', 'olist') }}"
