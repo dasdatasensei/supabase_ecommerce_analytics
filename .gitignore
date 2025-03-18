@@ -1,0 +1,140 @@
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# DBT
+target/
+dbt_packages/
+dbt_modules/
+logs/
+
+# Environment files
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+.env.dev
+.env.prod
+.env.*.local
+.env.bak
+*.env
+
+# Credentials and secrets
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+*.keystore
+*.cert
+credentials.json
+service-account.json
+*credentials*
+*secret*
+*apikey*
+*password*
+*token*
+*_key*
+*_secret*
+*access_key*
+secrets.yaml
+secrets.yml
+*secrets*
+*config.json
+*config.yaml
+*config.yml
+
+# Cloud provider credentials
+.aws/
+.aws/credentials
+.aws/config
+aws-credentials
+aws-config
+s3cfg
+.boto
+gcloud/
+.gcp/
+azure/
+.azure/
+
+# Database credentials and dumps
+*.dump
+*.sql.gz
+*.dump.gz
+pgpass
+.pgpass
+my.cnf
+.my.cnf
+
+# Other sensitive files
+.netrc
+.htpasswd
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+.vs/
+*.sublime-project
+*.sublime-workspace
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Airflow
+airflow.db
+airflow.cfg
+unittests.cfg
+airflow-webserver.pid
+webserver_config.py
+
+# Metabase
+metabase.db
+
+# Temp files
+*.tmp
+*.temp
+.temp/
+tmp/
+temp/

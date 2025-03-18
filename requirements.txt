@@ -1,0 +1,31 @@
+# Database connectors
+sqlalchemy>=1.4.24,<2.0
+psycopg2-binary==2.9.9
+supabase>=2.0.0
+
+# Data processing
+pandas==2.1.1
+numpy==1.26.0
+pyarrow==14.0.1
+
+# ETL utilities
+apache-airflow==2.7.1
+dbt-postgres==1.6.1
+dbt-core==1.6.1
+
+# Visualization
+metabase-api==0.2.5
+
+# Development utilities
+python-dotenv==1.0.0
+pytest==7.4.2
+black==23.9.1
+isort==5.12.0
+flake8==6.1.0
+
+# Documentation
+mkdocs==1.5.3
+mkdocs-material==9.4.2
+
+# Kaggle API
+kaggle==1.5.16

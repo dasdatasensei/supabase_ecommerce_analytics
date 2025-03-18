@@ -1,0 +1,396 @@
+version: 2
+
+models:
+  - name: int_orders_with_items
+    description: >
+      Intermediate model that combines order details with their items, payments, and reviews.
+      This model serves as the foundation for order-level analysis, providing a complete view
+      of each order's lifecycle, from purchase to delivery and review.
+
+      For detailed segmentation logic and business rules, see segmentation_logic.md
+    tests:
+      - dbt_utils.equal_rowcount:
+          compare_model: ref('stg_olist__orders')
+      - dbt_utils.expression_is_true:
+          expression: "count(*) > 0"
+    columns:
+      - name: order_id
+        description: Primary key - Unique identifier for each order
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('stg_olist__orders')
+              field: order_id
+
+      - name: customer_id
+        description: Foreign key to the customers table
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_olist__customers')
+              field: customer_id
+
+      - name: order_status
+        description: Current status of the order in the fulfillment pipeline
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                [
+                  "delivered",
+                  "shipped",
+                  "canceled",
+                  "unavailable",
+                  "invoiced",
+                  "processing",
+                  "approved",
+                  "created",
+                ]
+
+      - name: purchased_at
+        description: Timestamp when the order was placed
+        tests:
+          - not_null
+
+      - name: number_of_items
+        description: Total number of items in the order
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 1"
+
+      - name: number_of_sellers
+        description: Number of unique sellers involved in the order
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 1"
+
+      - name: total_items_amount
+        description: Total cost of items before shipping
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: total_shipping_amount
+        description: Total shipping cost for all items
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: total_order_amount
+        description: Total order cost including items and shipping
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "= total_items_amount + total_shipping_amount"
+
+      - name: total_payment_amount
+        description: Total amount paid through all payment methods
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+
+      - name: has_payment_discrepancy
+        description: Flag indicating if there's a difference between order amount and payment amount
+        tests:
+          - not_null
+
+  - name: int_customer_orders
+    description: >
+      Intermediate model that aggregates order history and behavior per customer.
+      This model provides a comprehensive view of customer purchasing patterns,
+      preferences, and satisfaction metrics, enabling customer segmentation and
+      lifetime value analysis.
+
+      For detailed segmentation logic and business rules, see segmentation_logic.md
+    tests:
+      - dbt_utils.equal_rowcount:
+          compare_model: ref('stg_olist__customers')
+    columns:
+      - name: customer_id
+        description: Primary key - Unique identifier for each customer
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('stg_olist__customers')
+              field: customer_id
+
+      - name: total_orders
+        description: Total number of orders placed by the customer
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: total_spent
+        description: Total amount spent by the customer across all orders
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: avg_order_amount
+        description: Average amount spent per order
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: avg_review_score
+        description: Average review score given by the customer
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "avg_review_score is null or (avg_review_score between 1 and 5)"
+
+      - name: frequency_segment
+        description: >
+          Customer segment based on order frequency. Thresholds:
+          - High Frequency (5+ orders): Loyal customers
+          - Medium Frequency (2-4 orders): Returning customers
+          - Low Frequency (1 order): One-time buyers
+          Used for targeting marketing campaigns and retention strategies.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["high_frequency", "medium_frequency", "low_frequency"]
+
+      - name: value_segment
+        description: >
+          Customer segment based on average order value. Thresholds:
+          - High Value (500+ BRL): Premium customers
+          - Medium Value (100-499 BRL): Core customers
+          - Low Value (<100 BRL): Price-sensitive customers
+          Used for personalized promotions and VIP programs.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["high_value", "medium_value", "low_value"]
+
+      - name: nps_segment
+        description: >
+          Customer segment based on review scores (NPS proxy). Thresholds:
+          - Promoter (4-5 stars): Brand advocates
+          - Passive (3-3.9 stars): Satisfied but not enthusiastic
+          - Detractor (<3 stars): At-risk customers
+          Used for satisfaction improvement and churn prevention.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["promoter", "passive", "detractor"]
+
+  - name: int_seller_performance
+    description: >
+      Intermediate model that aggregates seller metrics and performance indicators.
+      This model enables seller performance analysis, monitoring, and segmentation
+      based on sales volume, customer satisfaction, and delivery reliability.
+
+      For detailed segmentation logic and business rules, see segmentation_logic.md
+    tests:
+      - dbt_utils.equal_rowcount:
+          compare_model: ref('stg_olist__sellers')
+    columns:
+      - name: seller_id
+        description: Primary key - Unique identifier for each seller
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('stg_olist__sellers')
+              field: seller_id
+
+      - name: total_orders
+        description: Total number of orders fulfilled by the seller
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: total_gmv
+        description: Total Gross Merchandise Value (GMV) generated by the seller
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: avg_review_score
+        description: Average review score received by the seller
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "avg_review_score is null or (avg_review_score between 1 and 5)"
+
+      - name: on_time_delivery_rate
+        description: Percentage of orders delivered on time
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "on_time_delivery_rate is null or (on_time_delivery_rate between 0 and 100)"
+
+      - name: volume_segment
+        description: >
+          Seller segment based on order volume. Thresholds:
+          - High Volume (100+ orders): Power sellers
+          - Medium Volume (20-99 orders): Established sellers
+          - Low Volume (<20 orders): New/occasional sellers
+          Used for seller support prioritization and growth programs.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["high_volume", "medium_volume", "low_volume"]
+
+      - name: value_segment
+        description: >
+          Seller segment based on total GMV. Thresholds:
+          - High Value (50,000+ BRL): Strategic sellers
+          - Medium Value (10,000-49,999 BRL): Growing sellers
+          - Low Value (<10,000 BRL): Small-scale sellers
+          Used for partnership programs and revenue optimization.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["high_value", "medium_value", "low_value"]
+
+      - name: performance_segment
+        description: >
+          Seller segment based on review scores. Thresholds:
+          - Excellent (4.5+ stars): Top performers
+          - Good (4.0-4.4 stars): Reliable sellers
+          - Average (3.0-3.9 stars): Meeting standards
+          - Poor (<3.0 stars): Needs improvement
+          Used for quality control and seller development.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["excellent", "good", "average", "poor"]
+
+      - name: delivery_segment
+        description: >
+          Seller segment based on delivery performance. Thresholds:
+          - Excellent (95%+ on-time): Outstanding logistics
+          - Good (85-94% on-time): Reliable delivery
+          - Average (70-84% on-time): Meeting standards
+          - Poor (<70% on-time): Needs improvement
+          Used for logistics optimization and seller training.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["excellent", "good", "average", "poor"]
+
+  - name: int_product_performance
+    description: >
+      Intermediate model that combines product details with sales performance and customer feedback.
+      This model enables product performance analysis, category insights, and inventory optimization
+      by combining physical attributes with sales and satisfaction metrics.
+
+      For detailed segmentation logic and business rules, see segmentation_logic.md
+    tests:
+      - dbt_utils.equal_rowcount:
+          compare_model: ref('stg_olist__products')
+    columns:
+      - name: product_id
+        description: Primary key - Unique identifier for each product
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('stg_olist__products')
+              field: product_id
+
+      - name: category_id
+        description: Foreign key to the product categories
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_olist__product_categories')
+              field: category_id
+
+      - name: total_orders
+        description: Total number of orders containing this product
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: total_gmv
+        description: Total Gross Merchandise Value (GMV) generated by the product
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+
+      - name: avg_price
+        description: Average selling price of the product
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+
+      - name: avg_review_score
+        description: Average review score for the product
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "avg_review_score is null or (avg_review_score between 1 and 5)"
+
+      - name: volume_segment
+        description: >
+          Product segment based on order volume. Thresholds:
+          - High Volume (50+ orders): Best-sellers
+          - Medium Volume (10-49 orders): Steady performers
+          - Low Volume (<10 orders): Slow movers
+          Used for inventory management and merchandising.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["high_volume", "medium_volume", "low_volume"]
+
+      - name: price_segment
+        description: >
+          Product segment based on average price. Thresholds:
+          - Premium (500+ BRL): High-end products
+          - Mid-range (100-499 BRL): Core offerings
+          - Budget (<100 BRL): Entry-level items
+          Used for pricing strategy and promotional planning.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["premium", "mid_range", "budget"]
+
+      - name: rating_segment
+        description: >
+          Product segment based on review scores. Thresholds:
+          - Excellent (4.5+ stars): Top-rated
+          - Good (4.0-4.4 stars): Well-received
+          - Average (3.0-3.9 stars): Satisfactory
+          - Poor (<3.0 stars): Needs improvement
+          Used for quality control and product optimization.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["excellent", "good", "average", "poor"]
+
+      - name: weight_segment
+        description: >
+          Product segment based on weight. Thresholds:
+          - Heavy (10kg+): Special handling
+          - Medium (2-10kg): Standard shipping
+          - Light (<2kg): Economic shipping
+          Used for logistics planning and shipping cost optimization.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["heavy", "medium", "light"]
+
+      - name: size_segment
+        description: >
+          Product segment based on volume. Thresholds:
+          - Large (50,000+ cm³): Special storage/shipping
+          - Medium (10,000-49,999 cm³): Standard handling
+          - Small (<10,000 cm³): Easy to store/ship
+          Used for warehouse optimization and shipping strategy.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["large", "medium", "small"]

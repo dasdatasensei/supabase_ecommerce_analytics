@@ -1,0 +1,66 @@
+version: 2
+
+sources:
+  - name: olist
+    description: "Raw data from Brazilian E-commerce Public Dataset by Olist"
+    database: "{{ env_var('DB_NAME', 'ecommerce-db') }}"
+    schema: "{{ env_var('DB_SCHEMA', 'olist') }}"
+    tables:
+      - name: customers
+        description: "Customer and their location data"
+        columns:
+          - name: customer_id
+            description: "Primary key"
+            tests:
+              - unique
+              - not_null
+
+      - name: geolocation
+        description: "Brazilian zip code geocode data"
+
+      - name: order_items
+        description: "Items purchased in each order"
+        columns:
+          - name: order_id
+            description: "Foreign key to orders table"
+            tests:
+              - not_null
+              - relationships:
+                  to: source('olist', 'orders')
+                  field: order_id
+
+      - name: order_payments
+        description: "Payment information for each order"
+
+      - name: order_reviews
+        description: "Customer reviews for orders"
+
+      - name: orders
+        description: "Order header information"
+        columns:
+          - name: order_id
+            description: "Primary key"
+            tests:
+              - unique
+              - not_null
+
+      - name: products
+        description: "Product information"
+        columns:
+          - name: product_id
+            description: "Primary key"
+            tests:
+              - unique
+              - not_null
+
+      - name: sellers
+        description: "Seller information"
+        columns:
+          - name: seller_id
+            description: "Primary key"
+            tests:
+              - unique
+              - not_null
+
+      - name: product_categories
+        description: "Product category name translations"

@@ -1,0 +1,220 @@
+name: ecommerceanalytics-prod
+
+services:
+  # Supabase services
+  supabase-db:
+    image: supabase/postgres:15.1.0.147
+    restart: always
+    env_file:
+      - ../.env.prod
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_DB: ${DB_NAME}
+      DB_SCHEMA: ${DB_SCHEMA}
+    volumes:
+      - supabase-db-data:/var/lib/postgresql/data
+      - ./init-metabase-db.sh:/docker-entrypoint-initdb.d/init-metabase-db.sh
+      - ../init-db-config.sh:/docker-entrypoint-initdb.d/init-db-config.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - supabase-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  supabase-api:
+    image: postgrest/postgrest:v11.2.0
+    depends_on:
+      - supabase-db
+    restart: always
+    env_file:
+      - ../.env.prod
+    environment:
+      PGRST_DB_URI: postgres://${DB_USER}:${DB_PASSWORD}@supabase-db:5432/${DB_NAME}
+      PGRST_DB_SCHEMAS: public,${DB_SCHEMA},auth
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${SUPABASE_SERVICE_KEY}
+      PGRST_JWT_ROLE_CLAIM_KEY: ".role"
+    networks:
+      - supabase-network
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1G
+
+  # Metabase with resource constraints
+  metabase:
+    image: metabase/metabase:v0.46.6
+    restart: always
+    env_file:
+      - ../.env.prod
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: ${METABASE_DB_NAME}
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${DB_USER}
+      MB_DB_PASS: ${DB_PASSWORD}
+      MB_DB_HOST: supabase-db
+      JAVA_TIMEZONE: UTC
+      JAVA_OPTS: "-Xmx1g"
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    healthcheck:
+      test: curl -f http://localhost:3000/api/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - supabase-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  # Airflow services with production settings
+  airflow-webserver:
+    build:
+      context: ..
+      dockerfile: docker/airflow.Dockerfile
+    restart: always
+    env_file:
+      - ../.env.prod
+    volumes:
+      - ../src:/opt/airflow/src
+      - airflow-logs:/opt/airflow/logs
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@supabase-db:5432/${DB_NAME}
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/src/dags
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW_HOME=/opt/airflow
+      - DBT_PROFILES_DIR=/opt/airflow/src/dbt_project/profiles
+    command: webserver
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      - supabase-db
+    networks:
+      - supabase-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  airflow-scheduler:
+    build:
+      context: ..
+      dockerfile: docker/airflow.Dockerfile
+    restart: always
+    env_file:
+      - ../.env.prod
+    volumes:
+      - ../src:/opt/airflow/src
+      - airflow-logs:/opt/airflow/logs
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@supabase-db:5432/${DB_NAME}
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/src/dags
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW_HOME=/opt/airflow
+      - DBT_PROFILES_DIR=/opt/airflow/src/dbt_project/profiles
+    command: scheduler
+    depends_on:
+      - airflow-webserver
+    networks:
+      - supabase-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  # Redis for Airflow Celery Executor
+  redis:
+    image: redis:7.0.5-alpine
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - supabase-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # Airflow worker for production
+  airflow-worker:
+    build:
+      context: ..
+      dockerfile: docker/airflow.Dockerfile
+    restart: always
+    env_file:
+      - ../.env.prod
+    volumes:
+      - ../src:/opt/airflow/src
+      - airflow-logs:/opt/airflow/logs
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@supabase-db:5432/${DB_NAME}
+      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW_FERNET_KEY}
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/src/dags
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://${DB_USER}:${DB_PASSWORD}@supabase-db:5432/${DB_NAME}
+      - AIRFLOW_HOME=/opt/airflow
+      - DBT_PROFILES_DIR=/opt/airflow/src/dbt_project/profiles
+    command: celery worker
+    depends_on:
+      - airflow-webserver
+      - redis
+    networks:
+      - supabase-network
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 2G
+
+  # Backup service for database dumps
+  db-backup:
+    image: postgres:15.1
+    restart: always
+    env_file:
+      - ../.env.prod
+    volumes:
+      - db-backups:/backups
+    command: >
+      bash -c "
+        mkdir -p /backups
+        && echo '0 2 * * * pg_dump -h supabase-db -U $$DB_USER -d $$DB_NAME -f /backups/backup-$$(date +\%Y\%m\%d\%H\%M\%S).sql && find /backups -type f -mtime +7 -delete' > /var/spool/cron/crontabs/root
+        && while true; do sleep 86400; done
+      "
+    depends_on:
+      - supabase-db
+    networks:
+      - supabase-network
+
+networks:
+  supabase-network:
+    driver: bridge
+
+volumes:
+  supabase-db-data:
+    driver: local
+  airflow-logs:
+    driver: local
+  db-backups:
+    driver: local

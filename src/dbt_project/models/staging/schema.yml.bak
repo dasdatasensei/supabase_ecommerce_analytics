@@ -1,0 +1,491 @@
+version: 2
+
+models:
+  - name: stg_olist__product_categories
+    description: >
+      Staging model for product category names and their English translations.
+      This model serves as a lookup table for product categorization and enables
+      multi-language support for the e-commerce platform.
+    tests:
+      - dbt_utils.equal_rowcount:
+          compare_model: source('olist', 'product_category_name_translation')
+    columns:
+      - name: category_id
+        description: Primary key - The product category name in Portuguese that serves as a unique identifier
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('stg_olist__products')
+              field: category_id
+
+      - name: category_name_english
+        description: The English translation of the product category name, standardized and cleaned
+        tests:
+          - not_null
+          - dbt_utils.not_empty_string
+
+      - name: category_name_portuguese
+        description: The original Portuguese product category name, preserved for reference
+        tests:
+          - not_null
+          - dbt_utils.not_empty_string
+
+  - name: stg_olist__geolocation
+    description: >
+      Staging model for Brazilian zip code geolocation data. Deduplicated to one entry per zip code.
+      This model provides geographical context for customer and seller locations, enabling
+      spatial analysis and logistics optimization.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - zip_code_prefix
+            - city_normalized
+            - state_normalized
+    columns:
+      - name: zip_code_prefix
+        description: Primary key - The Brazilian zip code prefix (first 5 digits)
+        tests:
+          - unique
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "length(zip_code_prefix) = 5"
+
+      - name: latitude
+        description: Geographic latitude coordinate in decimal degrees
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "latitude between -33.75 and 5.27" # Brazil's latitude range
+
+      - name: longitude
+        description: Geographic longitude coordinate in decimal degrees
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "longitude between -73.99 and -34.79" # Brazil's longitude range
+
+      - name: city
+        description: Original city name from the source, preserved for reference
+        tests:
+          - not_null
+          - dbt_utils.not_empty_string
+
+      - name: state
+        description: Original state abbreviation from the source, used for regional analysis
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                [
+                  "AC",
+                  "AL",
+                  "AP",
+                  "AM",
+                  "BA",
+                  "CE",
+                  "DF",
+                  "ES",
+                  "GO",
+                  "MA",
+                  "MT",
+                  "MS",
+                  "MG",
+                  "PA",
+                  "PB",
+                  "PR",
+                  "PE",
+                  "PI",
+                  "RJ",
+                  "RN",
+                  "RS",
+                  "RO",
+                  "RR",
+                  "SC",
+                  "SP",
+                  "SE",
+                  "TO",
+                ]
+
+      - name: city_normalized
+        description: City name with proper capitalization and standardized formatting
+        tests:
+          - not_null
+          - dbt_utils.not_empty_string
+
+      - name: state_normalized
+        description: State abbreviation in uppercase, standardized for consistency
+        tests:
+          - not_null
+          - dbt_utils.not_empty_string
+
+  - name: stg_olist__orders
+    description: >
+      Staging model for Olist orders data. Contains one record per order with timestamps, status, and delivery metrics.
+      This model is the central fact table connecting customers, products, sellers, and transactions.
+    tests:
+      - dbt_utils.equal_rowcount:
+          compare_model: source('olist', 'orders')
+      - dbt_utils.expression_is_true:
+          expression: "count(*) > 0"
+    columns:
+      - name: order_id
+        description: Primary key - Unique identifier for each order
+        tests:
+          - unique
+          - not_null
+          - dbt_utils.not_empty_string
+          - relationships:
+              to: ref('stg_olist__order_items')
+              field: order_id
+
+      - name: customer_id
+        description: Foreign key to the customers table, enables customer behavior analysis
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_olist__customers')
+              field: customer_id
+
+      - name: order_status
+        description: >
+          Current status of the order in the fulfillment pipeline.
+          Statuses follow a progression: created -> approved -> processing -> shipped -> delivered
+          Or may be marked as canceled/unavailable if fulfillment fails.
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                [
+                  "delivered",
+                  "shipped",
+                  "canceled",
+                  "unavailable",
+                  "invoiced",
+                  "processing",
+                  "approved",
+                  "created",
+                ]
+
+      - name: purchased_at
+        description: Timestamp when the order was placed by the customer
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "purchased_at >= '2016-01-01' and purchased_at <= current_timestamp"
+
+      - name: approved_at
+        description: Timestamp when the order was approved for fulfillment
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "approved_at >= purchased_at"
+
+      - name: shipped_at
+        description: Timestamp when the order was handed to the carrier for delivery
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "shipped_at is null or shipped_at >= approved_at"
+
+      - name: delivered_at
+        description: Timestamp when the order was successfully delivered to the customer
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "delivered_at is null or delivered_at >= shipped_at"
+
+      - name: estimated_delivery_at
+        description: Estimated delivery date provided to customer at time of purchase
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "estimated_delivery_at > purchased_at"
+
+      - name: delivery_time_days
+        description: Actual delivery time in days, calculated as (delivered_at - purchased_at)
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "delivery_time_days is null or delivery_time_days >= 0"
+
+      - name: delivery_variance_days
+        description: Difference between estimated and actual delivery in days
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "delivery_variance_days is null or abs(delivery_variance_days) <= 365"
+
+      - name: is_delivered_on_time
+        description: Boolean flag indicating if the order was delivered by the estimated date
+        tests:
+          - not_null
+
+      - name: is_delivered
+        description: Boolean flag indicating if the order has been delivered
+        tests:
+          - not_null
+
+  - name: stg_olist__order_items
+    description: >
+      Staging model for Olist order items. Contains one record per item in each order, with pricing and shipping details.
+      This model connects orders to products and sellers, enabling analysis of sales patterns and seller performance.
+    tests:
+      - dbt_utils.equal_rowcount:
+          compare_model: source('olist', 'order_items')
+      - dbt_utils.expression_is_true:
+          expression: "count(*) > 0"
+    columns:
+      - name: order_item_sk
+        description: Surrogate key generated from order_id and order_item_id for unique item identification
+        tests:
+          - unique
+          - not_null
+
+      - name: order_id
+        description: Foreign key to the orders table, links items to their parent order
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_olist__orders')
+              field: order_id
+
+      - name: order_item_id
+        description: The sequence number of the item within the order (1-based indexing)
+        tests:
+          - not_null
+          - positive_values
+          - dbt_utils.expression_is_true:
+              expression: "order_item_id <= 100" # Reasonable max items per order
+
+      - name: product_id
+        description: Foreign key to the products table, enables product performance analysis
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_olist__products')
+              field: product_id
+
+      - name: seller_id
+        description: Foreign key to the sellers table, enables seller performance analysis
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_olist__sellers')
+              field: seller_id
+
+      - name: shipping_limit_at
+        description: The deadline for the seller to ship the item to maintain service level
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "shipping_limit_at > current_timestamp - interval '5 years'"
+
+      - name: price_amount
+        description: The price of the item in Brazilian Reals (BRL), excluding shipping
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+          - dbt_utils.expression_is_true:
+              expression: "< 10000" # Reasonable max price
+
+      - name: shipping_amount
+        description: The freight value (shipping cost) in Brazilian Reals (BRL)
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+          - dbt_utils.expression_is_true:
+              expression: "< 1000" # Reasonable max shipping cost
+
+      - name: total_amount
+        description: The total cost (price + shipping) in Brazilian Reals (BRL)
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+          - dbt_utils.expression_is_true:
+              expression: "= price_amount + shipping_amount"
+
+      - name: is_free_item
+        description: Boolean flag indicating if the item was given for free (price = 0)
+        tests:
+          - not_null
+
+      - name: is_free_shipping
+        description: Boolean flag indicating if shipping was free (freight_value = 0)
+        tests:
+          - not_null
+
+  - name: stg_olist__order_payments
+    description: >
+      Staging model for Olist order payments. Contains payment details for each order, including payment method, installments, and amounts.
+      This model enables financial analysis, payment method preferences, and installment plan insights.
+    tests:
+      - dbt_utils.equal_rowcount:
+          compare_model: source('olist', 'order_payments')
+      - dbt_utils.expression_is_true:
+          expression: "count(*) > 0"
+    columns:
+      - name: order_payment_sk
+        description: Surrogate key for unique payment identification
+        tests:
+          - unique
+          - not_null
+
+      - name: order_id
+        description: Foreign key to the orders table, links payments to orders
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_olist__orders')
+              field: order_id
+
+      - name: payment_sequential
+        description: The sequence number for multiple payments on the same order
+        tests:
+          - not_null
+          - positive_values
+          - dbt_utils.expression_is_true:
+              expression: "<= 10" # Reasonable max payments per order
+
+      - name: payment_type
+        description: The payment method used (credit_card, debit_card, voucher, boleto)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["credit_card", "debit_card", "voucher", "boleto"]
+
+      - name: payment_installments
+        description: Number of installments chosen for the payment (1 = single payment)
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: ">= 1"
+          - dbt_utils.expression_is_true:
+              expression: "<= 24" # Reasonable max installments
+
+      - name: payment_amount
+        description: The payment amount in Brazilian Reals (BRL)
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+          - dbt_utils.expression_is_true:
+              expression: "< 10000" # Reasonable max payment
+
+      - name: is_installment_payment
+        description: Boolean flag indicating if payment was split into installments
+        tests:
+          - not_null
+
+      - name: is_credit_card
+        description: Boolean flag for credit card payments
+        tests:
+          - not_null
+
+      - name: is_debit_card
+        description: Boolean flag for debit card payments
+        tests:
+          - not_null
+
+      - name: is_voucher
+        description: Boolean flag for voucher payments
+        tests:
+          - not_null
+
+      - name: is_boleto
+        description: Boolean flag for boleto payments (Brazilian payment slip)
+        tests:
+          - not_null
+
+      - name: installment_amount
+        description: The amount per installment in Brazilian Reals (BRL)
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+          - dbt_utils.expression_is_true:
+              expression: "= payment_amount / payment_installments"
+
+  - name: stg_olist__order_reviews
+    description: >
+      Staging model for Olist order reviews. Contains customer reviews and ratings for orders.
+      This model enables customer satisfaction analysis, sentiment tracking, and response time monitoring.
+      Reviews provide valuable insights into product quality and seller performance.
+    tests:
+      - dbt_utils.equal_rowcount:
+          compare_model: source('olist', 'order_reviews')
+      - dbt_utils.expression_is_true:
+          expression: "count(*) > 0"
+    columns:
+      - name: review_id
+        description: Primary key - Unique identifier for each customer review
+        tests:
+          - unique
+          - not_null
+          - dbt_utils.not_empty_string
+
+      - name: order_id
+        description: Foreign key to the orders table, links reviews to orders
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_olist__orders')
+              field: order_id
+
+      - name: review_score
+        description: Customer rating from 1 (very dissatisfied) to 5 (very satisfied)
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "between 1 and 5"
+
+      - name: review_comment_title
+        description: Optional title provided by customer for their review
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "review_comment_title is null or length(review_comment_title) <= 100"
+
+      - name: review_comment_message
+        description: Optional detailed feedback provided by customer
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "review_comment_message is null or length(review_comment_message) <= 1000"
+
+      - name: created_at
+        description: Timestamp when the customer submitted the review
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "created_at >= '2016-01-01' and created_at <= current_timestamp"
+
+      - name: answered_at
+        description: Timestamp when the review received a response
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "answered_at >= created_at"
+
+      - name: is_positive_review
+        description: Boolean flag for positive reviews (score >= 4)
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "is_positive_review = (review_score >= 4)"
+
+      - name: is_negative_review
+        description: Boolean flag for negative reviews (score <= 2)
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "is_negative_review = (review_score <= 2)"
+
+      - name: has_review_comment
+        description: Boolean flag indicating presence of a comment
+        tests:
+          - not_null
+
+      - name: response_time_hours
+        description: Time between review creation and response in hours
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: ">= 0"
+          - dbt_utils.expression_is_true:
+              expression: "< 8760" # Max 1 year response time

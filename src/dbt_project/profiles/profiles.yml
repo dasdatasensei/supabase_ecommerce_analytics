@@ -1,0 +1,13 @@
+ecommerce_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DB_HOST', 'localhost') }}"
+      user: "{{ env_var('DB_USER', '${DB_USER}') }}"
+      password: "{{ env_var('DB_PASSWORD', '${DB_USER}') }}"
+      port: "{{ env_var('DB_PORT', 5433) | int }}"
+      dbname: "{{ env_var('DB_NAME', 'ecommerce-db') }}"
+      schema: "{{ env_var('DB_SCHEMA', 'olist') }}"
+      threads: 4
+      keepalives_idle: 0 # Disable keepalive idle checks

@@ -1,0 +1,27 @@
+# DBT profiles for connecting to the database
+# This file will be copied to /opt/airflow/src/dbt_project/profiles/ during Docker build
+dbt_project:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: supabase-db
+      user: "{{ env_var('DB_USER', 'postgres') }}"
+      pass: "{{ env_var('DB_PASSWORD', 'postgres') }}"
+      port: 5432
+      dbname: "{{ env_var('DB_NAME', 'postgres') }}"
+      schema: public
+      threads: 4
+      keepalives_idle: 0
+      connect_timeout: 10
+    prod:
+      type: postgres
+      host: "{{ env_var('DB_HOST', 'supabase-db') }}"
+      user: "{{ env_var('DB_USER', 'postgres') }}"
+      pass: "{{ env_var('DB_PASSWORD', 'postgres') }}"
+      port: "{{ env_var('DB_PORT', '5432') }}"
+      dbname: "{{ env_var('DB_NAME', 'postgres') }}"
+      schema: public
+      threads: 8
+      keepalives_idle: 0
+      connect_timeout: 10
