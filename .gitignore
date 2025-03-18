@@ -138,3 +138,15 @@ metabase.db
 .temp/
 tmp/
 temp/
+
+# External paths that should never be committed
+~/.dbt/
+~/.aws/
+~/.config/
+~/.*
+
+# Additional dbt-specific ignores
+profiles.yml
+.user.yml
+.profiles.yml
+*profiles*.yml
